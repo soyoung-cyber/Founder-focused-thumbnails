@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EO – Founder Focused Thumbnails</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f0f0f; color: #fff; font-family: -apple-system, sans-serif; }
+    header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #222;
+    }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header span { font-size: 13px; color: #aaa; }
+    .controls {
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #1a1a1a;
+      flex-wrap: wrap;
+    }
+    .controls label { font-size: 13px; color: #aaa; }
+    input[type=range] { width: 120px; accent-color: #ff0000; }
+    #size-label { font-size: 13px; color: #aaa; min-width: 50px; }
+    .sort-btns { display: flex; gap: 6px; }
+    .sort-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #aaa;
+      padding: 5px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sort-btn:hover { border-color: #555; color: #fff; }
+    .sort-btn.active { background: #ff0000; border-color: #ff0000; color: #fff; }
+    input[type=search] {
+      margin-left: auto;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 13px;
+      width: 260px;
+      outline: none;
+    }
+    input[type=search]:focus { border-color: #555; }
+    #count { font-size: 13px; color: #aaa; white-space: nowrap; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--thumb-w, 240px), 1fr));
+      gap: 12px;
+      padding: 20px 24px;
+    }
+    .card {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #1a1a1a;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,0.6); z-index: 1; }
+    .card a { display: block; text-decoration: none; color: inherit; }
+    .thumb-wrap { position: relative; width: 100%; padding-top: 56.25%; background: #111; }
+    .thumb-wrap img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .badge-num {
+      position: absolute; top: 6px; left: 6px;
+      background: rgba(0,0,0,0.75);
+      color: #fff; font-size: 11px;
+      padding: 2px 6px; border-radius: 4px;
+      font-weight: 600;
+    }
+    .badge-views {
+      position: absolute; bottom: 6px; right: 6px;
+      background: rgba(0,0,0,0.8);
+      color: #fff; font-size: 11px;
+      padding: 2px 6px; border-radius: 4px;
+    }
+    .info { padding: 8px 10px; }
+    .title {
+      font-size: 12px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>EO · Founder Focused</h1>
+  <span>Playlist thumbnail viewer</span>
+</header>
+<div class="controls">
+  <label>Size</label>
+  <input type="range" id="size-slider" min="120" max="480" value="240" step="20">
+  <span id="size-label">240px</span>
+  <div class="sort-btns">
+    <button class="sort-btn active" data-sort="playlist">Playlist order</button>
+    <button class="sort-btn" data-sort="views">Most viewed</button>
+  </div>
+  <span id="count"></span>
+  <input type="search" id="search" placeholder="Search titles...">
+</div>
+<div class="grid" id="grid"></div>
+
+<script>
+const videos = [
+  {"id":"CxFQykWiJqY","title":"\"50 AI Agents Running My Company\" Is a Lie. Here's How I Build It | Gumloop, Max Brodeur-Urbas","views":"76K views","viewsN":76000},
+  {"id":"_-ybKTL2ehg","title":"This Founder is Making 1B+ Excel Workers 20x Faster | Meridian, John Ling","views":"16K views","viewsN":16000},
+  {"id":"qb6uCFyO098","title":"How I Found a Winning Idea After 8 Pivots | Pensive, Yoon","views":"13K views","viewsN":13000},
+  {"id":"IfNPcmoFYn0","title":"The Navy Leadership Lesson That Built a $450M Company | Blue Water Autonomy, Rylan Hamilton","views":"4.8K views","viewsN":4800},
+  {"id":"Ha2l1ecmI2Y","title":"While You Build Casinos, We Build Real Finance | LayerZero, co-founders","views":"14K views","viewsN":14000},
+  {"id":"LgewaIpQVko","title":"How Prompt Engineering Inventor Built $1.5B in 3 Years | You.com, Richard Socher","views":"16K views","viewsN":16000},
+  {"id":"fqGTIyrtnBU","title":"The Strategy That Turned a Dying $1.3B Company Into a $100M AI Agent | Intercom, Eoghan McCabe","views":"11K views","viewsN":11000},
+  {"id":"hbGQaAXZ5UU","title":"How to Build a Product that Hits PMF on Day 1 | Granola, Christopher Pedregal","views":"12K views","viewsN":12000},
+  {"id":"h6aqpjrUd5c","title":"This Is How a 26-Year-Old Raised $108M in 1.5 Years | Reducto, Adit Abraham","views":"22K views","viewsN":22000},
+  {"id":"b_UMhn8E8lI","title":"This 24-Year-Old Founder Raised $64M to Build World's First AI Mathematician | Axiom, Carina Hong","views":"63K views","viewsN":63000},
+  {"id":"pztijFSlfZs","title":"25 Years of Building Startups Explained in 17 Minutes | TaleTree, Matt Hagger","views":"11K views","viewsN":11000},
+  {"id":"d6lKyaPgvzs","title":"Why Your Startup Fails to Scale ($12B+ Founder Explains) | DevRev, Dheeraj Pandey","views":"14K views","viewsN":14000},
+  {"id":"HmDUWxpPgnI","title":"100 AI Leaders Explain How to Build AI That Will Win in 2026 — WHAT BUILDERS SHOULD DO NOW","views":"36K views","viewsN":36000},
+  {"id":"UwoflMkwL40","title":"How to Hit 2M Subs in 2 Years Building an AI Newsletter | The Rundown AI, Rowan Cheung","views":"40K views","viewsN":40000},
+  {"id":"zwXz30EYyfQ","title":"Everyone's Misunderstanding AI's True Potential | Radical AI, Joseph F. Krause","views":"22K views","viewsN":22000},
+  {"id":"4n28-DoNxWs","title":"The Biggest Mistake in My 25-Year Journey Building Unicorn Startup | Godard Abel, G2","views":"9.6K views","viewsN":9600},
+  {"id":"AOlmBo16wD8","title":"How a Miami Dunker built Shortcut, the Excel AI Agent | Fundamental Research Labs, Nico Christie","views":"5.1K views","viewsN":5100},
+  {"id":"zMuGbkFtE9E","title":"How I Got Half a Million Users in Just 16 Weeks | Rocket.new, Vishal Virani","views":"22K views","viewsN":22000},
+  {"id":"C0AlI0oc9q4","title":"What Young Founders Get Wrong About Startups | Articul8, Arun Subramaniyan","views":"12K views","viewsN":12000},
+  {"id":"P5QXWrHnTzw","title":"From Google DeepMind to a $8B Superintelligence Startup | ReflectionAI, Misha Laskin","views":"24K views","viewsN":24000},
+  {"id":"PcbPBj_xXes","title":"How to Find $100M+ Startup Ideas in Any Market | Counsel Health, Muthu Alagappan","views":"12K views","viewsN":12000},
+  {"id":"Do_LjDsisIE","title":"The One Discipline That Made Me a Billionaire by Age 30 | Lucy Guo, Passes","views":"206K views","viewsN":206000},
+  {"id":"cweJsYgLRRc","title":"How an Indian Immigrant with No Background Raised $25M | FurtherAI, Aman Gour","views":"20K views","viewsN":20000},
+  {"id":"xo3eKArnIo4","title":"Why Every Founder Needs to Care About AI Safety Right Now | Glen Wise, Cinder","views":"6.9K views","viewsN":6900},
+  {"id":"CvpMjBDHFGM","title":"How I Exited My AI Startup for $640M at Age 25 | Prepared, Michael Chime","views":"23K views","viewsN":23000},
+  {"id":"5y9crq8f-Hs","title":"How a Cockroach Startup Became a $2.2B Market Leader | EliseAI, Minna Song","views":"66K views","viewsN":66000},
+  {"id":"X_ClPE5Y2q4","title":"From Apple & Uber to Creating a Multi-Billion Dollar Wallet Industry | Magic Labs Documentary","views":"17K views","viewsN":17000},
+  {"id":"al8nDmjVzxo","title":"The $2.2B Founder's First Advice | Sadi Khan, Aven","views":"19K views","viewsN":19000},
+  {"id":"xutwpmlTYmE","title":"A Designer Who Saved 150M+ Developers | GitHub, Diana Mounter (Former Head of Design)","views":"18K views","viewsN":18000},
+  {"id":"vrY8x-iGsFs","title":"Stop Feeding AI for Free | OpenLedger, Ram Kumar","views":"9.1K views","viewsN":9100},
+  {"id":"bRBLPJguU-0","title":"Silicon Valley's Top Investors Bet on This 22-Year-Old Founder | Sola, Jessica Wu","views":"607K views","viewsN":607000},
+  {"id":"yMOmmnjy3sE","title":"The 5 Step Playbook for 10x Your AI Productivity | Jeremy Utley","views":"509K views","viewsN":509000},
+  {"id":"8Nd_39d5q9A","title":"A Yale Student Raised $3.1M in 2 Weeks for an AI Social App | Series, Nathaneo Johnson","views":"50K views","viewsN":50000},
+  {"id":"WXLVCZIUxpY","title":"This is the Biggest Hidden Risk of AI | Traversal, Anish Agarwal","views":"12K views","viewsN":12000},
+  {"id":"xWYb7tImErI","title":"The Only Trait for Success in the AI Era—How to Build It | Carnegie Mellon University Po-Shen Loh","views":"1M views","viewsN":1000000},
+  {"id":"J_pWyYxu6qE","title":"What 30 years in Silicon Valley taught me | Nextdoor, Nirav Tolia","views":"7.4K views","viewsN":7400},
+  {"id":"Fr_5Gk_w_o8","title":"Utopia or Dystopia? Humanoid Robot NEO Has Arrived at Our Home | 1X, Bernt Børnich","views":"56K views","viewsN":56000},
+  {"id":"Xqsudhg-8qk","title":"How to Find $10M+ Ideas in Markets We'd Never Worked In | Comulate, Jordan Katz & Michael Mattheakis","views":"72K views","viewsN":72000},
+  {"id":"Z2GmRgmq3Ls","title":"How to Build $1.5B AI Startup in Just 3 Years | fal's co-founders","views":"14K views","viewsN":14000},
+  {"id":"d9SKd-zqYAc","title":"The 8-Year Journey to Building a $4B AI Company | Synthesia, Victor Riparbelli","views":"11K views","viewsN":11000},
+  {"id":"rQ3luEIcKes","title":"I Built a General AI Agent After School at Age 13 | Flowe AI, Michael Goldstein","views":"25K views","viewsN":25000},
+  {"id":"bwttXIyQmno","title":"How We 5X Our Revenue While Others Chase AI Updates | Lindy, Flo Crivello","views":"24K views","viewsN":24000},
+  {"id":"Djeykrg3WkM","title":"Built to Share: 2M Users in 18 Months | Julius AI, Rahul Sonwalkar","views":"39K views","viewsN":39000},
+  {"id":"9c3oNP8yiKs","title":"How I Built a $1.3B Startup by Pivoting Fast | Windsurf, Varun Mohan, Co-Founder & CEO","views":"210K views","viewsN":210000},
+  {"id":"ViAGOAc2LAo","title":"How Bolt Hit $40M ARR in 5 Months with This AI Pivot Strategy | Stackblitz(Bolt.new), Eric Simons","views":"62K views","viewsN":62000},
+  {"id":"KeD5i7K-q2Q","title":"Everyone's Chasing AI But This Matters The Most | Ron Gutman, Intrivo","views":"12K views","viewsN":12000},
+  {"id":"llMFdIVBDBQ","title":"How a Solo Dev Went From $0 to $57M Raised | Laravel, Taylor Otwell","views":"192K views","viewsN":192000},
+  {"id":"aGY3QSuOz-E","title":"How I Hit 10M Users in Just 1 Year | Creati, Ella Zhang","views":"71K views","viewsN":71000},
+  {"id":"Ns-rmhAqPN4","title":"From Apple to Oculus — Now Taking On Consumer Hardware | Nirav Patel, Framework","views":"49K views","viewsN":49000},
+  {"id":"KHSI0Qu4ovQ","title":"Silicon Valley's Hottest Young Founder Right Now | Cluely, Roy Lee","views":"963K views","viewsN":963000},
+  {"id":"LBn0eAxQpb8","title":"How Luma Built a $200M AI by Shipping Fast, Not Perfect | Luma AI, Amit Jain","views":"44K views","viewsN":44000},
+  {"id":"GG77NdMC3kk","title":"Building AI Search Engine for the GPT-5 Era | Will Bryk, Exa","views":"31K views","viewsN":31000},
+  {"id":"S4iY1ddf2Vg","title":"Branding Masterclass for AI Founders | Smith & Diction","views":"18K views","viewsN":18000},
+  {"id":"yVcCywnPuC8","title":"How I Built a $3.3B Blockchain Business Against All Odds | Konstantin Richter, Blockdaemon","views":"25K views","viewsN":25000},
+  {"id":"uB-u2__tkHQ","title":"The Journey from India to Building a $500M AI Video Product | Gaurav Misra, Captions","views":"48K views","viewsN":48000},
+  {"id":"GkGWBGJlQrs","title":"I Built $200M Nuclear Energy Startup at 19 | JC.B, Fuse","views":"50K views","viewsN":50000},
+  {"id":"IPVCnBaneak","title":"Built 2nd Startup at 23, Execution was Everything | Intellect Theodoric Chew","views":"20K views","viewsN":20000},
+  {"id":"VGPUg24tsQ8","title":"How We Went from Zero Buyers to One of the Fastest-Growing B2B Startups | Transcend, Ben Brook","views":"23K views","viewsN":23000},
+  {"id":"UbaXgFM_dGw","title":"Vibe Coding All Day? Stop Delivering Prototypes | Graphite, Merrill Lutsky","views":"14K views","viewsN":14000},
+  {"id":"_jEnJYU3e7k","title":"How I Built a $300M Startup with No Degree and No Network | Selfbook, Khalid Meniri","views":"191K views","viewsN":191000},
+  {"id":"5UhnQ2h-5BY","title":"\"Don't Learn to Code\" Is WRONG | GitHub CEO Thomas Dohmke","views":"476K views","viewsN":476000},
+  {"id":"At9Ti-O-NqA","title":"A College Dropout Builds $1B Startup at 22 | Injective, Eric Chen","views":"18K views","viewsN":18000},
+  {"id":"PC6rHWC0qDw","title":"Advice from a Founder Who Built a $390M Company at 57 | LucidLink, Peter Thompson","views":"126K views","viewsN":126000},
+  {"id":"Tk-EI2yYT3A","title":"30-Minute Masterclass on Product Thinking | Instagram Co-Founder & Anthropic CPO, Mike Krieger","views":"187K views","viewsN":187000},
+  {"id":"i1MQ91jLRzQ","title":"What I Learned Building AI That Competes with Tesla | Helm.ai, Vlad Voroninski","views":"8.4K views","viewsN":8400},
+  {"id":"YTj2SkZ13hw","title":"How I Raised $17M in 14 Days | Pylon, Marty Kausas","views":"59K views","viewsN":59000},
+  {"id":"qNXUaijIPCQ","title":"How to Scale Up When You're Stuck Between Early and Growth | Postscript, Alex Beller","views":"34K views","viewsN":34000},
+  {"id":"bfD4oFQXHTs","title":"How I Built $15M Annual Revenue Vertical SaaS | Dan Uyemura, PushPress","views":"12K views","viewsN":12000},
+  {"id":"WWSn6NceO7s","title":"Next Tesla in the B2B Market | Captain of SEOUL ROBOTICS, Hanbin Lee","views":"16K views","viewsN":16000},
+  {"id":"apewL43Q8Tg","title":"9 Months Zero Code, $75M Raised | Merge, Shensi Ding","views":"166K views","viewsN":166000},
+  {"id":"gQEkCFzZfPA","title":"How a 3-Person Founder Team Beat Big Tech | Mangomint, Daniel Lang","views":"44K views","viewsN":44000},
+  {"id":"j6Z-JGoqFpM","title":"Escaped Belarus, Built $100M ARR Business | PandaDoc, Mikita Mikado","views":"7.8K views","viewsN":7800},
+  {"id":"fDdeXx8lND8","title":"Why I Left Palantir and Faced 50 Rejections | Mosaic, Bijan Moallemi","views":"20K views","viewsN":20000},
+  {"id":"kvIDk4-QtlM","title":"Mindset Behind $50B in Revenue | Ema Unlimited, Surojit Chatterjee","views":"144K views","viewsN":144000},
+  {"id":"I5YOjn1V1fU","title":"From Zero to $1.5B Unicorn in 2 Years | Decagon, Jesse Zhang","views":"79K views","viewsN":79000},
+  {"id":"9MQNO9DbaYQ","title":"Pivot and Fail Fast: Most Valuable Lessons During Our 12-Year Journey to IPO | SES AI, Qichao Hu","views":"141K views","viewsN":141000},
+  {"id":"I2ATdfrmPMw","title":"How We Shape the Future of Hardware | Mytra's Co-Founders Interview","views":"14K views","viewsN":14000},
+  {"id":"Ewgx5oBvMG8","title":"This Insane AI Video Search Technology Selected by NVIDIA and Snowflake | Twelve Labs, Jae Lee","views":"11K views","viewsN":11000},
+  {"id":"249tl3G2WIM","title":"Building the Most Loved Analytics Tool ($1.05B, $100M ARR, 60+ NPS) | Mixpanel, Amir Movafaghi","views":"9.1K views","viewsN":9100},
+  {"id":"qzTT6KjnmnM","title":"Advice from the Top 1% of SpaceX Engineer | Sift, Karthik Gollapudi","views":"136K views","viewsN":136000},
+  {"id":"yhjsw2q790Q","title":"High School Dropout Made World's #2 NFT Project | Pudgy Penguins, Luca Netz","views":"8.6K views","viewsN":8600},
+  {"id":"my7HXZSGecw","title":"Big Tech is NOT the Only Answer to Win | Relay.app, Jacob Bank","views":"16K views","viewsN":16000},
+  {"id":"WAPJ8F0Nv7Q","title":"How I built $2B AI Translation Startup | DeepL, Jarek Kutylowski","views":"22K views","viewsN":22000},
+  {"id":"NWZB3Q5cyJ8","title":"How I built $3B Next-Gen Identity Startup for AGI Era | World, Alex Blania","views":"26K views","viewsN":26000},
+  {"id":"jMc6CjJvJoI","title":"Lessons from an Early-Stage Startup Over 4 Years | Handprint.tech","views":"15K views","viewsN":15000},
+  {"id":"6FhMNvhTsrA","title":"Raising $140M at $2B to protect IP in the age of AI | SY Lee, STORY","views":"13K views","viewsN":13000},
+  {"id":"dqUPMR26vGg","title":"How I Built an $80M Annual Revenue Business in Just 5 Years | Sandbox VR, Steven Zhao","views":"12K views","viewsN":12000},
+  {"id":"EqAknJoNayk","title":"How to Build a Product with 10 Customers and a Boring Tech Stack | Gravity Climate","views":"24K views","viewsN":24000},
+  {"id":"A-IsoneWlzE","title":"To Dominate the AI Race, Don't \"Start\" a Company | LiveKit, Russ d'Sa","views":"150K views","viewsN":150000},
+  {"id":"ReRLbpC2SG4","title":"How I Gained 5M Users In Just 7 Months | OpusClip, Young Zhao","views":"180K views","viewsN":180000},
+  {"id":"paDb5w0DywU","title":"Still The Coolest Smartphone Startup in Tech Scene 2025 | Nothing, Carl Pei","views":"773K views","viewsN":773000},
+  {"id":"orZUIquv09E","title":"$2B Web3 Startup Building the Future of IP in the Age of AI | Team Story Documentary","views":"161K views","viewsN":161000},
+  {"id":"FbeB91Jx_O8","title":"How to Win in the AI Hype Cycle | Guru, Rick Nucci","views":"43K views","viewsN":43000},
+  {"id":"kPXvf2-C_Hs","title":"How This AI Startup Grew by 100x in Just 6 Months | Fireworks AI, Lin Qiao","views":"80K views","viewsN":80000},
+  {"id":"rSe0wMBzFUw","title":"How I learned to invest from making 400+ investments | Paul Bragiel, 101 Fellowship","views":"8.1K views","viewsN":8100},
+  {"id":"FMNqCthCZCc","title":"What It Takes to Reach $100M+ Revenue as a Startup | CircleCI","views":"40K views","viewsN":40000},
+  {"id":"5d8tOtdcN2Q","title":"How I Built $825M Email Revolution Called Superhuman | Rahul Vohra","views":"126K views","viewsN":126000},
+  {"id":"VNlHzDTVSMk","title":"$650M Revenue Office Furniture | FURSYS US Expansion Documentary","views":"13K views","viewsN":13000},
+  {"id":"Q3EE-V-cMog","title":"Investors' Principles of Silicon Valley Taught in Stanford MBA | Ilya Strebulaev","views":"802K views","viewsN":802000},
+  {"id":"UA_gYKaXHS0","title":"First Lesson Taught in Harvard MBA in 18 Minutes | Thales Teixeira","views":"1.3M views","viewsN":1300000},
+  {"id":"xgeu8JOxbnA","title":"How He Helped Double Lung Cancer Survival Rates from 13% to 26% | Dorian Averbuch","views":"2.8K views","viewsN":2800},
+  {"id":"TRqA9XzGLok","title":"They Invested Their Own $1.5M For 6 Years in a Robot | Matic","views":"67K views","viewsN":67000},
+  {"id":"ZfNox6j8oxM","title":"What I learned from building $3.5B business | Verkada, Filip Kaliszan","views":"25K views","viewsN":25000},
+  {"id":"0-gz1nW_CuE","title":"I just dropped out of Yale for startup | Martin, Dawson Chen","views":"22K views","viewsN":22000},
+  {"id":"JiSjMKptCKY","title":"10K Users from Product Launch Day 1 | TomoCredit Kristy Kim","views":"116K views","viewsN":116000},
+  {"id":"1Rf-WLBusgI","title":"Sam Altman's plans to prove humanness in the age of AI | Worldcoin Tiago Sada","views":"10K views","viewsN":10000},
+  {"id":"8SOtQwSf7A8","title":"How I Built A $1.4B Software Giant Called Amplitude | Spenser Skates, Amplitude","views":"537K views","viewsN":537000},
+  {"id":"TDBXoIiYFdQ","title":"How To Validate PMF Effectively | Sean Ellis, Hacking Growth","views":"44K views","viewsN":44000},
+  {"id":"h_aGO5CVZh8","title":"Sold my product to 40,000 companies. This is How | Matt Martin Clockwise (2/2)","views":"11K views","viewsN":11000},
+  {"id":"Z1sl-XrsAOo","title":"Why Entrepreneurs Must Trust Their Intuition | Rewind AI, Optimizely, Dan Siroker","views":"28K views","viewsN":28000},
+  {"id":"6-y4oLTlPWM","title":"Best Leadership Advice from a CEO at a $1B Company | Sift, Kris Nagel (2/2)","views":"6.5K views","viewsN":6500},
+  {"id":"UU4GnqmLpSQ","title":"Best Sales Advice from a CEO at a $1B Company | Sift, Kris Nagel (1/2)","views":"16K views","viewsN":16000},
+  {"id":"6Bso2GYLoME","title":"How I Built A $4B Startup Called Webflow | Webflow, Vlad Magdalin","views":"209K views","viewsN":209000},
+  {"id":"PjaKQgV9PRk","title":"This is How Top Engineers Manage Their Time | Clockwise Matt Martin (1/2)","views":"12K views","viewsN":12000},
+  {"id":"K0s86-6kqvs","title":"$100M Food Truck Brand After Betrayal by Cofounder | CUPBOP (3/3)","views":"33K views","viewsN":33000},
+  {"id":"_1oX3Sas8u8","title":"How I Built Silicon Valley's Most Beloved Coffee Brand | Philz Coffee, Jacob Jaber","views":"12K views","viewsN":12000},
+  {"id":"ofh5VdqQvwI","title":"War survivor builds a 400% growing AI startup | Ntropy Naré Vardanyan","views":"18K views","viewsN":18000},
+  {"id":"uXNtZjiwhEc","title":"How we convinced the US Government to allow event trading | Kalshi Tarek Mansour","views":"14K views","viewsN":14000},
+  {"id":"KYho32uO1dc","title":"From Teenage Blogger to $250M Startup Founder | Circle Sid Yadav","views":"39K views","viewsN":39000},
+  {"id":"FZieYYj0ImE","title":"$8B in Just 2 Years, The World's Fastest-Growing Startup | Perplexity AI, Aravind Srinivas","views":"1M views","viewsN":1000000},
+  {"id":"RqIqlmb8BYM","title":"Success Starts at the End of Your Comfort Zone | Chartmetric, Sung M. Cho","views":"77K views","viewsN":77000},
+  {"id":"2JmfDKOyQcI","title":"Advice from the Top 1% of Software Engineer | Exaltitude Jean Lee","views":"511K views","viewsN":511000},
+  {"id":"KWCFX76bkO4","title":"When $100M Business Ownership Ends a Friendship | CUPBOP EP.2","views":"23K views","viewsN":23000},
+  {"id":"WeNnc3_xn2A","title":"Behind Figma's IPO: The Principles of Building Products People Love | Yuhki Yamashita, Figma CPO","views":"172K views","viewsN":172000},
+  {"id":"H4VpVMKx19k","title":"A Story of a Mentor of Outstanding PMs in Silicon Valley Today | Mick Johnson Director's Cut","views":"22K views","viewsN":22000},
+  {"id":"JpYA7WXkHyI","title":"How to be a creative thinker | Carnegie Mellon University Po-Shen Loh","views":"3.6M views","viewsN":3600000},
+  {"id":"VFmBNFy3z8Y","title":"Lessons learned from stepping down as a CEO | Bob Tinker & TaeHea Nahm EP 03","views":"5.3K views","viewsN":5300},
+  {"id":"B8FIp_VL1t8","title":"Stop Overthinking and Just Start Now | Vesto, Benjamin Döpfner","views":"53K views","viewsN":53000},
+  {"id":"v6DWGV3_n6k","title":"Shark Tank-featured food truck builds $100M brand beloved by Americans | CUPBOP EP.1","views":"29K views","viewsN":29000},
+  {"id":"dXeqodByjT4","title":"From Zero to $500 Million: The GlossGenius Story | Danielle Cohen-Shohet","views":"19K views","viewsN":19000},
+  {"id":"yB2IenqIRL8","title":"A High School Dropout Builds $1B Startup at 23 | Vise Samir Vasavada","views":"1.6M views","viewsN":1600000},
+  {"id":"2FbCdBFnZbM","title":"Loom's Road to $975 Million Exit by Atlassian - Shahed Khan","views":"113K views","viewsN":113000},
+  {"id":"b2AR3WHOlGI","title":"How 2 Engineers Are Dominating the Cannabis Industry | Nabis Jun and Vince","views":"276K views","viewsN":276000},
+  {"id":"HDsFyHQtLHI","title":"My 2 Startups didn't work, But here's what I've become | Meta Mick Johnson (2/2)","views":"16K views","viewsN":16000},
+  {"id":"rB7haeRWib4","title":"4 Lessons that resulted in a 10x growth for 100+ PMs | Meta Mick Johnson (1/2)","views":"43K views","viewsN":43000},
+  {"id":"6gbeuzbsmIQ","title":"Life Lessons that Sustained Me | Sherie Ng","views":"10K views","viewsN":10000},
+  {"id":"bdWokDQda_Y","title":"A motel TV-watching college student builds a $1.4B company at 30 | FiscalNote Director's Cut","views":"73K views","viewsN":73000},
+  {"id":"PZ-NZxubqjg","title":"Essential Business Strategy: Forecasting Future Trends | Vinnie Lauria","views":"31K views","viewsN":31000},
+  {"id":"T7tuUz1SRuE","title":"An honest story about the hardships and team | Bobobox","views":"7.3K views","viewsN":7300},
+  {"id":"aOGMymXPgrk","title":"Why 90% of Startup CEOs Are Failing | John Kim Sendbird","views":"600K views","viewsN":600000},
+  {"id":"5mGMDdT6YrM","title":"You will be executing immediately in 20 minutes | Blitzscaling Director's Cut","views":"809K views","viewsN":809000},
+  {"id":"FO5XdYrPnJ0","title":"Human Thoughts vs Speed of Innovation | Singularity Group","views":"9.3K views","viewsN":9300},
+  {"id":"c3w_G0jvtTg","title":"This 12-minute Video Might Just Change Your LIFE | Paul Bragiel EP.2","views":"22K views","viewsN":22000},
+  {"id":"_z8lsx1FCHo","title":"How to build a $100M revenue business | Bob Tinker & Tae Hea Nahm EP 02","views":"33K views","viewsN":33000},
+  {"id":"x7dP3CRah40","title":"This insane growth strategy was adopted by Sam Altman for OpenAI | Blitzscaling (2/2)","views":"24K views","viewsN":24000},
+  {"id":"QDkqI_jrsxo","title":"OpenAI's Secrets to Growth in 12 Minutes | Blitzscaling (1/2)","views":"36K views","viewsN":36000},
+  {"id":"NKFZTuk_ylY","title":"Mistakes startups make in business plans | Bob Tinker & Tae Hea Nahm EP 01","views":"23K views","viewsN":23000},
+  {"id":"9FKwfgMIeS0","title":"Stop watching this video and Go build things | Paul Bragiel, Golden Gate Ventures","views":"124K views","viewsN":124000},
+  {"id":"YiSeTeveTf8","title":"Why Stanford lecturer start investing in Education | Sergio Monsalve","views":"9K views","viewsN":9000},
+  {"id":"8Is9oJzfV6I","title":"The Creative Methods I learned at the Best Animation Studio | We Bare Bears Daniel Chong","views":"8.8K views","viewsN":8800},
+  {"id":"-39Yq-67MvU","title":"How the world's largest luxury group became our customer within 3 months | MarqVision","views":"19K views","viewsN":19000},
+  {"id":"x57DYc-k81w","title":"We helped 100M job applicants across the world | Fountain","views":"13K views","viewsN":13000},
+  {"id":"LJgv-8oZ1CU","title":"Unconventional Story of an Entrepreneur | Manu Kumar of K9 Ventures","views":"16K views","viewsN":16000},
+  {"id":"jK6lVwp0HJE","title":"When AI can do inspiring things except eliminate jobs | Whisper","views":"16K views","viewsN":16000},
+  {"id":"PL9mBq2WStw","title":"In a Failed Business, Until Building a Notion and Figma-focused Startup | Partly","views":"16K views","viewsN":16000},
+  {"id":"BYaP3SiofyU","title":"How Leadership Helped Me Increase My Value 200 Times | Jina Kim (2/2)","views":"7.6K views","viewsN":7600},
+  {"id":"ZSWIoJTUfn4","title":"What It Takes to Be the 4th Employee of a Unicorn Startup | Jina Kim (1/2)","views":"25K views","viewsN":25000},
+  {"id":"AP0cxygwoDU","title":"The Fastest Productivity Tool to Reach 1M Users | Tome","views":"38K views","viewsN":38000},
+  {"id":"0xfBCb9QS6U","title":"Lessons from investing in 1000 startups | Saeed Amidi & Alireza Masrour at Plug and Play","views":"191K views","viewsN":191000},
+  {"id":"ZA9K0JMrbWg","title":"Survival Strategies in the Era of AI Taught by Stanford | Stanford AIRE Director","views":"1.6M views","viewsN":1600000},
+  {"id":"dRJVKoYhisM","title":"The Not-so-pretty Story of Growing a Company | IYUNO CEO David Lee","views":"97K views","viewsN":97000},
+  {"id":"63FWL7KcWrE","title":"$1 Billion Edu Giant backed by OpenAI | Speak","views":"234K views","viewsN":234000},
+  {"id":"FPYl7nIKRbA","title":"9-Year Hustle to Achieve a Single Goal | Notion's Cofounders","views":"1.5M views","viewsN":1500000},
+  {"id":"Owk3EbneBDk","title":"4 Key Lessons from a 30-Year-Old Unicorn Founder | FiscalNote Tim Hwang (2/2)","views":"20K views","viewsN":20000},
+  {"id":"Y-i5-nhqVzQ","title":"The Simplest Yet Most Challenging Way to Grow a Startup | FiscalNote Tim Hwang (1/2)","views":"60K views","viewsN":60000},
+  {"id":"xyr9v1laE9s","title":"Career Advice for Ordinary People | Joshua Zerkel","views":"24K views","viewsN":24000},
+  {"id":"laHrTDQfZpk","title":"What it takes to raise $5.5M from nothing | Business Canvas team documentary","views":"861K views","viewsN":861000},
+  {"id":"HaLZcaDfaVY","title":"What I Learned From In Hyper-growing Startups | Troy Malone","views":"49K views","viewsN":49000},
+  {"id":"PgdsItdmtMk","title":"Advice for the future entrepreneurs | Saeju Jeong (2/2)","views":"89K views","viewsN":89000},
+  {"id":"ZHRLOnGdKIA","title":"He didn't make money for 8 years | Saeju Jeong (1/2)","views":"177K views","viewsN":177000},
+  {"id":"dKKo2_rblF4","title":"An Associate Dean of Stanford Was A Bottom Student | Paul Kim","views":"372K views","viewsN":372000},
+  {"id":"FeDnW5wYjwA","title":"The Fastest Growing SaaS Startup in History | deel","views":"433K views","viewsN":433000},
+  {"id":"fZT3_O2Uazk","title":"Why I Choose Web3 Rather Than Big Tech | Sisun Lee (2/2)","views":"55K views","viewsN":55000},
+  {"id":"lWeiVX7PnEQ","title":"Things I Learned From 10 Years In Silicon Valley | Sisun Lee (1/2)","views":"428K views","viewsN":428000},
+  {"id":"e-arMLz2qdI","title":"6 Years Journey From 0 to 60 Million Subscribers | Nas Daily","views":"87K views","viewsN":87000},
+  {"id":"lV61TDHiALo","title":"Follow this 2-week plan to build a great business | Phil Libin (2/2)","views":"125K views","viewsN":125000},
+  {"id":"XM6NHNxS39E","title":"How I built 400 million users app Evernote | Phil Libin (1/2)","views":"180K views","viewsN":180000},
+  {"id":"llevwQZ3VtA","title":"A Learning App Tutors 10 Million Children Worldwide | Enuma","views":"37K views","viewsN":37000},
+  {"id":"GP5jXj0O4OM","title":"Best startup lessons from Y Combinator | Michael Seibel","views":"603K views","viewsN":603000},
+  {"id":"aHGIVzYqScs","title":"How a World Cup soccer player built a $600 million shoe brand | Allbirds","views":"33K views","viewsN":33000},
+  {"id":"wJ-Ahf0K_z0","title":"Room Temperature Superconductors Will Change Everything","views":"268K views","viewsN":268000}
+];
+
+// Add playlist index
+videos.forEach((v, i) => v.playlistIdx = i);
+
+const grid = document.getElementById('grid');
+const slider = document.getElementById('size-slider');
+const sizeLabel = document.getElementById('size-label');
+const searchInput = document.getElementById('search');
+const countEl = document.getElementById('count');
+const sortBtns = document.querySelectorAll('.sort-btn');
+
+let currentSort = 'playlist';
+
+sortBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    sortBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSort = btn.dataset.sort;
+    render();
+  });
+});
+
+function getSorted(list) {
+  if (currentSort === 'views') {
+    return [...list].sort((a, b) => b.viewsN - a.viewsN);
+  }
+  return [...list].sort((a, b) => a.playlistIdx - b.playlistIdx);
+}
+
+function render() {
+  grid.innerHTML = '';
+  const q = searchInput.value.toLowerCase();
+  const filtered = videos.filter(v => !q || v.title.toLowerCase().includes(q));
+  const sorted = getSorted(filtered);
+
+  sorted.forEach((v, rank) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const badgeText = currentSort === 'views'
+      ? `#${rank + 1} · ${v.views}`
+      : `#${v.playlistIdx + 1}`;
+    card.innerHTML = `
+      <a href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">
+        <div class="thumb-wrap">
+          <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg"
+               alt="${v.title.replace(/"/g,'&quot;')}"
+               loading="lazy">
+          <span class="badge-num">${badgeText}</span>
+          ${currentSort === 'playlist' ? `<span class="badge-views">${v.views}</span>` : ''}
+        </div>
+        <div class="info">
+          <div class="title">${v.title}</div>
+        </div>
+      </a>`;
+    grid.appendChild(card);
+  });
+
+  countEl.textContent = `${sorted.length} / ${videos.length} videos`;
+}
+
+function updateSize(val) {
+  grid.style.setProperty('--thumb-w', val + 'px');
+  sizeLabel.textContent = val + 'px';
+}
+
+slider.addEventListener('input', () => updateSize(slider.value));
+searchInput.addEventListener('input', render);
+
+updateSize(slider.value);
+render();
+</script>
+</body>
+</html>
