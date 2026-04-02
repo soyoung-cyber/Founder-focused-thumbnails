@@ -166,6 +166,10 @@
     }
     .ab-variant.is-winner { border: 2px solid #ffd700; }
     .ab-thumb { width: 100%; border-radius: 6px; display: block; }
+    .ab-thumb-placeholder { aspect-ratio: 16/9; background: #222; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .ab-thumb-placeholder::after { content: 'No thumbnail'; font-size: 11px; color: #555; }
+    body.light .ab-thumb-placeholder { background: #ddd; }
+    body.light .ab-thumb-placeholder::after { color: #999; }
     .ab-variant-title { font-size: 11px; color: #ccc; margin-top: 8px; line-height: 1.4; }
     .ab-bar-wrap { margin-top: 8px; background: #333; border-radius: 4px; height: 6px; overflow: hidden; }
     .ab-bar-fill { height: 100%; background: #ff0000; border-radius: 4px; }
@@ -526,7 +530,10 @@ function openModal(v) {
       const barWidth = vr.watchTimeShare != null ? vr.watchTimeShare + '%' : '0%';
       return `<div class="ab-variant${vr.winner ? ' is-winner' : ''}">
         ${vr.winner ? '<span class="ab-winner-badge">Winner</span>' : ''}
-        <img class="ab-thumb" src="${vr.thumbUrl}" onerror="this.src='https://i.ytimg.com/vi/${v.id}/hqdefault.jpg'" alt="Variant ${i+1}">
+        ${vr.thumbUrl
+          ? `<img class="ab-thumb" src="${vr.thumbUrl}" onerror="this.src='https://i.ytimg.com/vi/${v.id}/hqdefault.jpg'" alt="Variant ${i+1}">`
+          : `<div class="ab-thumb ab-thumb-placeholder"></div>`
+        }
         <div class="ab-variant-title">${vr.title}</div>
         <div class="ab-bar-wrap"><div class="ab-bar-fill${vr.winner ? '' : ' loser'}" style="width:${barWidth}"></div></div>
         <div class="ab-pct">${pct}</div>
