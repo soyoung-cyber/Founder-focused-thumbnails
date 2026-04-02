@@ -531,7 +531,7 @@ function openModal(v) {
       return `<div class="ab-variant${vr.winner ? ' is-winner' : ''}">
         ${vr.winner ? '<span class="ab-winner-badge">Winner</span>' : ''}
         ${vr.thumbUrl
-          ? `<img class="ab-thumb" src="${vr.thumbUrl}" onerror="this.src='https://i.ytimg.com/vi/${v.id}/hqdefault.jpg'" alt="Variant ${i+1}">`
+          ? `<img class="ab-thumb" src="${vr.thumbUrl}" onerror="this.outerHTML='<div class=\\'ab-thumb ab-thumb-placeholder\\'></div>'" alt="Variant ${i+1}">`
           : `<div class="ab-thumb ab-thumb-placeholder"></div>`
         }
         <div class="ab-variant-title">${vr.title}</div>
