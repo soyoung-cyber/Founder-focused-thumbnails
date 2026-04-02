@@ -97,8 +97,8 @@
     .badge-ab {
       position: absolute; top: 6px; right: 6px;
       background: #ff0000;
-      color: #fff; font-size: 10px; font-weight: 700;
-      padding: 2px 6px; border-radius: 4px;
+      color: #fff; font-size: 12px; font-weight: 700;
+      padding: 4px 9px; border-radius: 5px;
       cursor: pointer; z-index: 2;
       letter-spacing: 0.5px;
     }
@@ -116,7 +116,18 @@
       max-height: 90vh; overflow-y: auto;
       position: relative;
     }
-    .ab-modal h2 { font-size: 15px; margin-bottom: 4px; }
+    .ab-modal h2 { font-size: 15px; margin-bottom: 8px; padding-right: 32px; line-height: 1.4; }
+    .ab-main-thumb { width: 100%; border-radius: 8px; display: block; margin-bottom: 12px; }
+    .ab-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .ab-views { font-size: 12px; color: #aaa; }
+    .ab-yt-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #ff0000; color: #fff;
+      padding: 7px 14px; border-radius: 6px;
+      text-decoration: none; font-size: 13px; font-weight: 600;
+    }
+    .ab-yt-btn:hover { background: #cc0000; }
+    .ab-section-title { font-size: 12px; color: #aaa; margin-bottom: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
     .ab-period { font-size: 12px; color: #aaa; margin-bottom: 16px; }
     .ab-variants { display: flex; gap: 12px; flex-wrap: wrap; }
     .ab-variant {
@@ -167,9 +178,17 @@
 <div class="ab-overlay" id="ab-overlay">
   <div class="ab-modal" id="ab-modal">
     <button class="ab-close" id="ab-close">×</button>
+    <img class="ab-main-thumb" id="ab-main-thumb" src="" alt="">
     <h2 id="ab-title"></h2>
-    <div class="ab-period" id="ab-period"></div>
-    <div class="ab-variants" id="ab-variants"></div>
+    <div class="ab-meta">
+      <span class="ab-views" id="ab-views"></span>
+      <a class="ab-yt-btn" id="ab-yt-link" href="#" target="_blank" rel="noopener">▶ Watch on YouTube</a>
+    </div>
+    <div id="ab-section-wrap" style="display:none">
+      <div class="ab-section-title">A/B Test Results</div>
+      <div class="ab-period" id="ab-period"></div>
+      <div class="ab-variants" id="ab-variants"></div>
+    </div>
   </div>
 </div>
 
@@ -398,20 +417,19 @@ function render() {
     const badgeText = currentSort === 'views'
       ? `#${rank + 1} · ${v.views}`
       : `#${v.playlistIdx + 1}`;
+    card.dataset.id = v.id;
     card.innerHTML = `
-      <a href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">
-        <div class="thumb-wrap">
-          <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg"
-               alt="${v.title.replace(/"/g,'&quot;')}"
-               loading="lazy">
-          <span class="badge-num">${badgeText}</span>
-          ${currentSort === 'playlist' ? `<span class="badge-views">${v.views}</span>` : ''}
-          ${v.ab ? `<span class="badge-ab" data-id="${v.id}">A/B</span>` : ''}
-        </div>
-        <div class="info">
-          <div class="title">${v.title}</div>
-        </div>
-      </a>`;
+      <div class="thumb-wrap">
+        <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg"
+             alt="${v.title.replace(/"/g,'&quot;')}"
+             loading="lazy">
+        <span class="badge-num">${badgeText}</span>
+        ${currentSort === 'playlist' ? `<span class="badge-views">${v.views}</span>` : ''}
+        ${v.ab ? `<span class="badge-ab">A/B</span>` : ''}
+      </div>
+      <div class="info">
+        <div class="title">${v.title}</div>
+      </div>`;
     grid.appendChild(card);
   });
 
@@ -429,35 +447,52 @@ searchInput.addEventListener('input', render);
 updateSize(slider.value);
 render();
 
-// A/B Modal
+// Modal
 const overlay = document.getElementById('ab-overlay');
 const abTitleEl = document.getElementById('ab-title');
 const abPeriodEl = document.getElementById('ab-period');
 const abVariantsEl = document.getElementById('ab-variants');
+const abMainThumb = document.getElementById('ab-main-thumb');
+const abYtLink = document.getElementById('ab-yt-link');
+const abViewsEl = document.getElementById('ab-views');
+const abSectionWrap = document.getElementById('ab-section-wrap');
+
 document.getElementById('ab-close').addEventListener('click', () => overlay.classList.remove('open'));
 overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
 
-document.getElementById('grid').addEventListener('click', e => {
-  const badge = e.target.closest('.badge-ab');
-  if (!badge) return;
-  e.preventDefault();
-  const id = badge.dataset.id;
-  const v = videos.find(v => v.id === id);
-  if (!v || !v.ab) return;
+function openModal(v) {
+  abMainThumb.src = `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
+  abMainThumb.alt = v.title;
   abTitleEl.textContent = v.title;
-  abPeriodEl.textContent = v.ab.period;
-  abVariantsEl.innerHTML = v.ab.variants.map((vr, i) => {
-    const pct = vr.watchTimeShare != null ? vr.watchTimeShare + '%' : '—';
-    const barWidth = vr.watchTimeShare != null ? vr.watchTimeShare + '%' : '0%';
-    return `<div class="ab-variant${vr.winner ? ' is-winner' : ''}">
-      ${vr.winner ? '<span class="ab-winner-badge">Winner</span>' : ''}
-      <img class="ab-thumb" src="${vr.thumbUrl}" onerror="this.src='https://i.ytimg.com/vi/${id}/hqdefault.jpg'" alt="Variant ${i+1}">
-      <div class="ab-variant-title">${vr.title}</div>
-      <div class="ab-bar-wrap"><div class="ab-bar-fill${vr.winner ? '' : ' loser'}" style="width:${barWidth}"></div></div>
-      <div class="ab-pct">${pct}</div>
-    </div>`;
-  }).join('');
+  abViewsEl.textContent = v.views;
+  abYtLink.href = `https://www.youtube.com/watch?v=${v.id}`;
+  if (v.ab) {
+    abSectionWrap.style.display = '';
+    abPeriodEl.textContent = v.ab.period;
+    abVariantsEl.innerHTML = v.ab.variants.map((vr, i) => {
+      const pct = vr.watchTimeShare != null ? vr.watchTimeShare + '%' : '—';
+      const barWidth = vr.watchTimeShare != null ? vr.watchTimeShare + '%' : '0%';
+      return `<div class="ab-variant${vr.winner ? ' is-winner' : ''}">
+        ${vr.winner ? '<span class="ab-winner-badge">Winner</span>' : ''}
+        <img class="ab-thumb" src="${vr.thumbUrl}" onerror="this.src='https://i.ytimg.com/vi/${v.id}/hqdefault.jpg'" alt="Variant ${i+1}">
+        <div class="ab-variant-title">${vr.title}</div>
+        <div class="ab-bar-wrap"><div class="ab-bar-fill${vr.winner ? '' : ' loser'}" style="width:${barWidth}"></div></div>
+        <div class="ab-pct">${pct}</div>
+      </div>`;
+    }).join('');
+  } else {
+    abSectionWrap.style.display = 'none';
+  }
   overlay.classList.add('open');
+}
+
+document.getElementById('grid').addEventListener('click', e => {
+  const card = e.target.closest('.card');
+  if (!card) return;
+  const id = card.dataset.id;
+  const v = videos.find(v => v.id === id);
+  if (!v) return;
+  openModal(v);
 });
 </script>
 </body>
