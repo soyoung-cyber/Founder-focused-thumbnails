@@ -6,7 +6,36 @@
   <title>EO – Founder Focused Thumbnails</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0f0f0f; color: #fff; font-family: -apple-system, sans-serif; }
+    body { background: #0f0f0f; color: #fff; font-family: -apple-system, sans-serif; transition: background 0.2s, color 0.2s; }
+    body.light { background: #f5f5f5; color: #111; }
+    body.light header { border-bottom-color: #ddd; }
+    body.light .controls { border-bottom-color: #e0e0e0; }
+    body.light .controls label { color: #555; }
+    body.light #size-label, body.light #count { color: #555; }
+    body.light .sort-btn { background: #fff; border-color: #ccc; color: #555; }
+    body.light .sort-btn:hover { border-color: #999; color: #111; }
+    body.light .sort-btn.active { background: #ff0000; border-color: #ff0000; color: #fff; }
+    body.light input[type=search] { background: #fff; border-color: #ccc; color: #111; }
+    body.light .card { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    body.light .title { color: #222; }
+    body.light .ab-modal { background: #fff; color: #111; }
+    body.light .ab-variant { background: #f0f0f0; }
+    body.light .ab-variant-title { color: #444; }
+    body.light .ab-views { color: #666; }
+    body.light .ab-period { color: #666; }
+    body.light .ab-bar-wrap { background: #ddd; }
+    body.light .ab-close { color: #888; }
+    body.light .ab-close:hover { color: #111; }
+    body.light .ab-section-title { color: #888; }
+    .theme-btn {
+      background: #1a1a1a; border: 1px solid #333;
+      border-radius: 6px; color: #aaa;
+      padding: 5px 12px; font-size: 13px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .theme-btn:hover { border-color: #555; color: #fff; }
+    body.light .theme-btn { background: #fff; border-color: #ccc; color: #555; }
+    body.light .theme-btn:hover { border-color: #999; color: #111; }
     header {
       padding: 20px 24px;
       border-bottom: 1px solid #222;
@@ -172,6 +201,7 @@
   </div>
   <span id="count"></span>
   <input type="search" id="search" placeholder="Search titles...">
+  <button class="theme-btn" id="theme-btn">☀ Light</button>
 </div>
 <div class="grid" id="grid"></div>
 
@@ -194,6 +224,7 @@
 
 <script>
 const videos = [
+  {"id":"7yMetPnsFT0","title":"35M Users. $100M ARR. My 10-Year Bet Was Right. | Otter.ai, Sam Liang","views":"5.9K views","viewsN":5900},
   {"id":"CxFQykWiJqY","title":"\"50 AI Agents Running My Company\" Is a Lie. Here's How I Build It | Gumloop, Max Brodeur-Urbas","views":"76K views","viewsN":76000,"ab":{"period":"Test finished. Ran from March 16, 2026 at 10:30 PM to March 18, 2026 at 10:57 AM.","variants":[{"thumbUrl":"https://i9.ytimg.com/vi/CxFQykWiJqY/mqdefault_custom_1.jpg?v=69b7fa8f&sqp=CKDmt84G&rs=AOn4CLD-8ANjtz-moTMoxsDStdL5kba8Ug","title":"\"50 AI Agents Running My Company\" Is a Lie. Here's How I Build It | Gumloop, Max Brodeur-Urbas","watchTimeShare":52.7,"winner":true},{"thumbUrl":"https://i9.ytimg.com/vi/CxFQykWiJqY/mqdefault_custom_2.jpg?v=69b7fa8f&sqp=CKDmt84G&rs=AOn4CLBcC3_77stqITtGoPAMQPV1vdePqg","title":"5 Rules of Building AI Agents That AI Bros Won't Teach You | Gumloop, Max Brodeur-Urbas","watchTimeShare":47.3,"winner":false}]}},
   {"id":"_-ybKTL2ehg","title":"This Founder is Making 1B+ Excel Workers 20x Faster | Meridian, John Ling","views":"16K views","viewsN":16000,"ab":{"period":"Test finished. Ran from March 12, 2026 at 11:00 PM to March 13, 2026 at 4:46 AM.","variants":[{"thumbUrl":"https://i9.ytimg.com/vi/_-ybKTL2ehg/mqdefault_custom_1.jpg?v=69b2a866&sqp=CKDmt84G&rs=AOn4CLCWznrm6c5ovwwkwmXT1-j3zX6wog","title":"What Silicon Valley's Top VCs Want in an AI Founder Right Now | Meridian, John Ling","watchTimeShare":29.9,"winner":false},{"thumbUrl":"https://i9.ytimg.com/vi/_-ybKTL2ehg/mqdefault_custom_2.jpg?v=69b2a866&sqp=CKDmt84G&rs=AOn4CLALBp9u9KYzME9ldi34UXBnKdp1Uw","title":"Silicon Valley's Top VCs Bet on This Founder Making Knowledge Work 20x Faster | Meridian, John Ling","watchTimeShare":22.3,"winner":false},{"thumbUrl":"https://i9.ytimg.com/vi/_-ybKTL2ehg/mqdefault_custom_3.jpg?v=69b2a866&sqp=CKDmt84G&rs=AOn4CLC2qHTWq65oePSEL_HmtiwZg5fPIQ","title":"This Founder is Making 1B+ Excel Workers 20x Faster | Meridian, John Ling","watchTimeShare":47.8,"winner":true}]}},
   {"id":"qb6uCFyO098","title":"How I Found a Winning Idea After 8 Pivots | Pensive, Yoon","views":"13K views","viewsN":13000},
@@ -446,6 +477,13 @@ searchInput.addEventListener('input', render);
 
 updateSize(slider.value);
 render();
+
+// Theme toggle
+const themeBtn = document.getElementById('theme-btn');
+themeBtn.addEventListener('click', () => {
+  document.body.classList.toggle('light');
+  themeBtn.textContent = document.body.classList.contains('light') ? '🌙 Dark' : '☀ Light';
+});
 
 // Modal
 const overlay = document.getElementById('ab-overlay');
